@@ -26,7 +26,15 @@ namespace PasswordVerifier
         public void password_must_have_at_least_one_uppercase()
         {
             var passwordVerifier = new PasswordVerifier();
-            bool result = passwordVerifier.Verify("AAAAAAAA");
+            bool result = passwordVerifier.Verify("aAAAAAAA");
+            result.Should().Be(true);
+        }
+
+        [Fact]
+        public void password_must_have_at_least_one_lowercase()
+        {
+            var passwordVerifier = new PasswordVerifier();
+            bool result = passwordVerifier.Verify("AAAAAAAa");
             result.Should().Be(true);
         }
     }
@@ -35,7 +43,12 @@ namespace PasswordVerifier
     {
         public bool Verify(string password)
         {
-            return HasMinimunLength(password) && HaveAtLeastOneUppercase(password);
+            return HasMinimunLength(password) && HaveAtLeastOneUppercase(password) && HaveAtLeastOneLowercase(password);
+        }
+
+        private bool HaveAtLeastOneLowercase(string password)
+        {
+            return password.ToCharArray().Any(char.IsLower);
         }
 
         private static bool HaveAtLeastOneUppercase(string password)
