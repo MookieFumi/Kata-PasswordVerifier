@@ -1,80 +1,50 @@
-﻿using System.Linq;
+﻿using System.Diagnostics;
 using FluentAssertions;
+using PasswordVerifier.Impl;
 using Xunit;
 
 namespace PasswordVerifier
 {
     public class PasswordVerifierShould
     {
-        [Fact]
-        public void password_must_have_at_least_8_characters()
+        private readonly Impl.PasswordVerifier _sut;
+
+        public PasswordVerifierShould()
         {
-            var passwordVerifier = new PasswordVerifier();
-            bool result = passwordVerifier.Verify("pass");
-            result.Should().Be(false);
+            _sut = new Impl.PasswordVerifier();
         }
 
-        [Fact]
-        public void password_not_be_null()
+        [Theory]
+        [InlineData(null, false)]
+        [InlineData("x", false)]
+        [InlineData("aB34567", true)]
+        [InlineData("12345678", false)]
+        [InlineData("1234567H", true)]
+        [InlineData("1234567h", true)]
+        [InlineData("aB345678", true)]
+        [InlineData("@A345678", true)]
+        public void returns_isvalid_ok_when_at_least_three_conditions_are_passed(string password, bool expectedResult)
         {
-            var passwordVerifier = new PasswordVerifier();
-            bool result = passwordVerifier.Verify(null);
-            result.Should().Be(false);
+            var result = _sut.Verify(new Password(password));
+            result.IsValid.Should().Be(expectedResult);
         }
 
-        [Fact]
-        public void password_must_have_at_least_one_uppercase()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("x")]
+        public void returns_reasons_if_not_is_valid(string password)
         {
-            var passwordVerifier = new PasswordVerifier();
-            bool result = passwordVerifier.Verify("aaaaaaaa");
-            result.Should().Be(false);
+            var result = _sut.Verify(new Password(password));
+            result.Reasons.Should().NotBeEmpty();
         }
 
-        [Fact]
-        public void password_must_have_at_least_one_lowercase()
+        [Theory]
+        [InlineData("1234567h")]
+        [InlineData("aB345678")]
+        public void returns_no_reason_if_is_valid(string password)
         {
-            var passwordVerifier = new PasswordVerifier();
-            bool result = passwordVerifier.Verify("AAAAAAAA");
-            result.Should().Be(false);
-        }
-
-        [Fact]
-        public void password_must_have_at_least_one_number()
-        {
-            var passwordVerifier = new PasswordVerifier();
-            bool result = passwordVerifier.Verify("aA345678");
-            result.Should().Be(true);
-        }
-    }
-
-    public class PasswordVerifier
-    {
-        public bool Verify(string password)
-        {
-            return HasMinimunLength(password) && 
-                HaveAtLeastOneUppercase(password) && 
-                HaveAtLeastOneLowercase(password) &&
-                HaveAtLeastOneNumber(password);
-        }
-
-        private bool HaveAtLeastOneNumber(string password)
-        {
-            return password.ToCharArray().Any(char.IsNumber);
-        }
-
-        private bool HaveAtLeastOneLowercase(string password)
-        {
-            return password.ToCharArray().Any(char.IsLower);
-        }
-
-        private static bool HaveAtLeastOneUppercase(string password)
-        {
-            return password.ToCharArray().Any(char.IsUpper);
-        }
-
-        private static bool HasMinimunLength(string password)
-        {
-            return password?.Length == 8;
+            var result = _sut.Verify(new Password(password));
+            result.Reasons.Should().BeEmpty();
         }
     }
 }
